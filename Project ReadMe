@@ -1,0 +1,43 @@
+🧠 SkillForge AI
+
+Intelligent Skill Gap Analyzer & Career Roadmap Generator
+
+SkillForge AI is a modern, single-page Web Application designed to analyze a user's current skill set against the industry demands of top tech careers (like Data Science, AI Engineering, and Software Engineering).
+
+🚀 Features
+
+Skill Gap Analyzer: Compares user skills with target role requirements to calculate a match score.
+
+Dynamic Roadmaps: Automatically generates a step-by-step learning path to acquire missing skills.
+
+3D Visualizations: Built with Three.js to provide an immersive neural-network aesthetic.
+
+Interactive Radar Charts: Uses Chart.js to visually map skill competencies.
+
+AI Chatbot Mentor: A simulated chat interface to provide context-aware career advice.
+
+No Backend Required: State is preserved seamlessly in the browser using localStorage.
+
+🛠️ Technology Stack
+
+Frontend: HTML5, CSS3, JavaScript (ES6)
+
+Styling: Tailwind CSS (via CDN)
+
+3D Engine: Three.js
+
+Data Visualization: Chart.js
+
+Icons: FontAwesome
+
+🌐 How to Deploy on Netlify (Drag and Drop)
+
+Create a folder on your desktop called SkillForge.
+
+Move index.html and README.md into this folder.
+
+Go to Netlify Drop.
+
+Drag and drop your SkillForge folder into the upload box on their website.
+
+Your site is now live! Netlify will provide you with a public URL you can share immediately.

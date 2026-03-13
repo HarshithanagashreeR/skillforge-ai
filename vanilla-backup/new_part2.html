@@ -1,0 +1,524 @@
+<script>
+// ====== DATA ======
+const careersDB = {
+  "Aerospace Engineer": ["Aerodynamics","Propulsion","CAD","MATLAB","Avionics","Thermodynamics","Materials Science","Fluid Dynamics"],
+  "Agricultural Engineer": ["Soil Science","Hydrology","AutoCAD","GIS","Machine Design","GPS Systems","Sustainability"],
+  "AI & ML Engineer": ["Python","PyTorch","TensorFlow","NLP","Computer Vision","MLOps","Deep Learning","Mathematics"],
+  "Biomedical Engineer": ["Biomechanics","Medical Imaging","FDA Regulations","CAD/CAM","Prototyping","Physiology","Data Analysis"],
+  "Chemical Engineer": ["Thermodynamics","Process Design","Mass Transfer","Fluid Mechanics","Aspen HYSYS","Reaction Engineering"],
+  "Civil Engineer": ["AutoCAD","Structural Analysis","Project Management","Surveying","Materials Science","Geotechnical","Cost Estimation"],
+  "Cloud Architect": ["AWS","Azure","Kubernetes","Docker","Terraform","Linux","Networking","Security","CI/CD"],
+  "Computer Hardware Engineer": ["C++","Verilog/VHDL","Microcontrollers","Embedded Systems","Circuit Design","Computer Architecture","PCB Design"],
+  "Cybersecurity Engineer": ["Network Security","Linux","Python","Ethical Hacking","Cryptography","SIEM","Firewalls","Incident Response"],
+  "Data Scientist": ["Python","SQL","Machine Learning","Statistics","Data Visualization","Spark","ETL Pipelines","Pandas"],
+  "Electrical Engineer": ["Circuit Design","MATLAB","PLC Programming","Power Systems","Signal Processing","Control Systems","PCB Layout"],
+  "Environmental Engineer": ["Water Treatment","EIA","AutoCAD","GIS","Fluid Mechanics","Sustainability","Chemistry"],
+  "Industrial Engineer": ["Process Optimization","Six Sigma","Lean Manufacturing","Supply Chain","Ergonomics","Operations Research"],
+  "Marine Engineer": ["Hydrodynamics","Naval Architecture","AutoCAD","Structural Analysis","Fluid Mechanics"],
+  "Materials Engineer": ["Metallurgy","Polymers","Thermodynamics","Failure Analysis","Nanotechnology","Manufacturing"],
+  "Mechanical Engineer": ["CAD","SolidWorks","Thermodynamics","Fluid Mechanics","FEA","Manufacturing Processes","Kinematics"],
+  "Mechatronics Engineer": ["Robotics","Control Systems","PLC","C++","Sensors & Actuators","Circuit Design","Embedded Systems"],
+  "Mining Engineer": ["Geology","AutoCAD","Surveying","Rock Mechanics","Safety Regulations","GIS"],
+  "Nuclear Engineer": ["Reactor Physics","Thermodynamics","Radiation Protection","Safety Analysis","MATLAB","Materials Science"],
+  "Petroleum Engineer": ["Reservoir Engineering","Drilling Operations","Thermodynamics","Geology","Data Analysis","Risk Assessment"],
+  "Robotics Engineer": ["ROS","C++","Python","Kinematics","Computer Vision","Control Systems","Machine Learning","SolidWorks"],
+  "Software Engineer": ["JavaScript","Python","Data Structures","Algorithms","Git","REST APIs","System Design","SQL","React"],
+  "Structural Engineer": ["Structural Analysis","AutoCAD","Revit","Steel Design","SAP2000","Building Codes"],
+  "Systems Engineer": ["Requirements Analysis","System Architecture","Integration","Testing","Risk Management","Python"]
+};
+
+const allBadges = [
+  {id:'b_new',emoji:'🔥',name:'Ignition',desc:'Created an account'},
+  {id:'b_analyzed',emoji:'🧬',name:'Sequence Started',desc:'Completed first skill analysis'},
+  {id:'b_half',emoji:'🚀',name:'Liftoff',desc:'Reached 50%+ match score'},
+  {id:'b_full',emoji:'⭐',name:'Mission Ready',desc:'Reached 80%+ match score'},
+  {id:'b_quiz1',emoji:'🧠',name:'First Attempt',desc:'Completed your first quiz'},
+  {id:'b_quiz_ace',emoji:'👑',name:'Quiz Master',desc:'Scored 100% on a quiz'},
+  {id:'b_streak3',emoji:'⚡',name:'Momentum',desc:'3-day streak'},
+  {id:'b_streak7',emoji:'🔋',name:'Powerhouse',desc:'7-day streak'},
+  {id:'b_explorer',emoji:'🌍',name:'World Explorer',desc:'Explored 3 job markets'},
+];
+
+const quizBank = [
+  {q:"What does 'SOLID' stand for in software engineering?",opts:["Single Responsibility, Open/Closed, Liskov, Interface Segregation, Dependency Inversion","Sequential, Ordered, Linked, Independent, Distributed","Scalable, Object-oriented, Layered, Integrated, Dynamic","None of the above"],ans:0,cat:"Software Engineering"},
+  {q:"Which data structure uses LIFO (Last In, First Out) ordering?",opts:["Queue","Heap","Stack","Linked List"],ans:2,cat:"Data Structures"},
+  {q:"What does CI/CD stand for?",opts:["Code Inspection / Code Delivery","Continuous Integration / Continuous Delivery","Central Intelligence / Continuous Development","Cloud Infrastructure / Cloud Deployment"],ans:1,cat:"DevOps"},
+  {q:"In thermodynamics, which law states energy cannot be created or destroyed?",opts:["Zeroth Law","First Law","Second Law","Third Law"],ans:1,cat:"Engineering Fundamentals"},
+  {q:"What is 'Big O' notation used to describe?",opts:["Memory size of a program","Algorithm time & space complexity","Database query optimization","Network bandwidth"],ans:1,cat:"Computer Science"},
+  {q:"What does FEA stand for in mechanical engineering?",opts:["Finite Element Analysis","Fluid Engineering Assessment","Force & Energy Analysis","Functional Engineering Approach"],ans:0,cat:"Mechanical Engineering"},
+  {q:"Which protocol is primarily used for secure data transfer over the internet?",opts:["FTP","HTTP","HTTPS/TLS","TCP"],ans:2,cat:"Networking"},
+  {q:"What is a microcontroller?",opts:["A type of CPU","A compact IC containing processor, memory and I/O","A networking device","A power regulator"],ans:1,cat:"Electronics"},
+  {q:"What does SQL stand for?",opts:["Structured Query Language","Simple Queue Language","Sequential Query Logic","Secure Query Layer"],ans:0,cat:"Databases"},
+  {q:"In Agile methodology, what is a 'Sprint'?",opts:["A sprint race by developers","A fixed-length development iteration","A code review meeting","A deployment pipeline"],ans:1,cat:"Project Management"},
+  {q:"What is the purpose of a load balancer?",opts:["To convert AC to DC","Distribute network traffic across servers","To compress files","To encrypt data"],ans:1,cat:"Cloud & Networking"},
+  {q:"Which engineering discipline focuses on designing computer chips?",opts:["Software Engineering","Biomedical Engineering","Computer Hardware Engineering","Electrical Engineering"],ans:2,cat:"Engineering"},
+];
+
+// ====== STATE ======
+let state = {
+  email: '', name: '', picture: '', targetCareer: 'Software Engineer',
+  userSkills: [], analysis: null, streak: 1, lastLogin: '', quizScores: [],
+  exploredCountries: new Set(), chatOpen: false, geminiKey: '',
+};
+
+let quizQ=[], quizIdx=0, quizScore=0, quizTimer=null, selectedOpt=null, radarChart=null, perfChart=null;
+
+// ====== BOOT ======
+window.onload = () => {
+  initBg();
+  loadState();
+  populateCareerSelect();
+  if(state.email) { bootApp(); } 
+  else {
+    document.getElementById('page-landing').classList.add('show');
+  }
+};
+
+function loadState(){
+  const s = localStorage.getItem('sf_state');
+  if(s) {
+    const loaded = JSON.parse(s);
+    state = {...state, ...loaded};
+    state.exploredCountries = new Set(loaded.exploredCountries||[]);
+  }
+  // Streak
+  const today = new Date().toDateString();
+  if(state.lastLogin && state.lastLogin !== today) {
+    const yesterday = new Date(Date.now()-86400000).toDateString();
+    state.streak = state.lastLogin === yesterday ? state.streak + 1 : 1;
+  }
+  state.lastLogin = today;
+  saveState();
+}
+
+function saveState(){
+  const s2 = {...state, exploredCountries: [...state.exploredCountries]};
+  localStorage.setItem('sf_state', JSON.stringify(s2));
+}
+
+function bootApp(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  document.getElementById('page-app').classList.add('show');
+  document.getElementById('chatbot-fab').classList.add('show');
+  updateSidebar();
+  nav('dashboard');
+  setTimeout(()=>{ initGSI(); }, 500);
+  checkBadge('b_new');
+  if(state.streak>=3) checkBadge('b_streak3');
+  if(state.streak>=7) checkBadge('b_streak7');
+}
+
+// ====== AUTH ======
+function goAuth(){
+  document.getElementById('page-landing').classList.remove('show');
+  document.getElementById('page-auth').classList.add('show');
+  setTimeout(initGSI, 600);
+}
+function demoMode(){ loginUser('demo@skillforge.ai','Demo Engineer',''); }
+function emailAuth(e){
+  e.preventDefault();
+  const em = document.getElementById('auth-email').value;
+  loginUser(em, em.split('@')[0], '');
+}
+window.loginUser = function(email, name, picture){
+  state.email=email; state.name=name||email.split('@')[0]; state.picture=picture;
+  saveState();
+  bootApp();
+  showToast(`Welcome back, ${state.name.split(' ')[0]}! 🚀`);
+};
+function logout(){
+  localStorage.clear();
+  if(window.google) try{google.accounts.id.disableAutoSelect();}catch(e){}
+  location.reload();
+}
+function initGSI(){
+  if(!window.google) return;
+  google.accounts.id.initialize({
+    client_id:"957294365498-501l1t4otj7qvhkjvd7sjhe43d85si5b.apps.googleusercontent.com",
+    callback: handleGoogleCredentialResponse, auto_prompt:false
+  });
+  const el = document.getElementById('gsi-btn-container');
+  if(el) google.accounts.id.renderButton(el, {type:"standard",shape:"rectangular",theme:"outline",text:"signin_with",size:"large"});
+}
+
+// ====== NAVIGATION ======
+function nav(id){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const navEl = document.getElementById('nav-'+id);
+  if(navEl) navEl.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const viewEl = document.getElementById('view-'+id);
+  if(viewEl) viewEl.classList.add('active');
+  if(id==='dashboard') refreshDashboard();
+  if(id==='roadmap') buildRoadmap();
+  if(id==='jobs') loadJobs();
+  if(id==='achievements') renderBadges();
+  if(id==='settings') refreshSettings();
+}
+
+// ====== DASHBOARD ======
+function updateSidebar(){
+  const av = document.getElementById('sb-avatar');
+  if(state.picture){ av.innerHTML=`<img src="${state.picture}" alt="">`; }
+  else{ av.textContent = state.name.charAt(0).toUpperCase(); }
+  document.getElementById('sb-name').textContent = state.name;
+  document.getElementById('sb-role').textContent = state.targetCareer;
+  document.getElementById('sb-streak').textContent = state.streak;
+}
+function refreshDashboard(){
+  document.getElementById('d-target').textContent = 'Target: '+state.targetCareer;
+  document.getElementById('d-streak').textContent = state.streak + ' 🔥';
+  document.getElementById('d-skills').textContent = state.userSkills.length;
+  document.getElementById('d-match').textContent = state.analysis ? state.analysis.score+'%' : '0%';
+  document.getElementById('dash-greeting').textContent = getGreeting();
+
+  if(state.analysis){
+    setTimeout(()=>{ document.getElementById('d-prog').style.width = state.analysis.score+'%'; }, 100);
+    const sc = state.analysis.score;
+    let insight = '';
+    if(sc>=80) insight = `🎯 <strong>Expert-tier alignment detected!</strong> You match ${sc}% of requirements for <strong>${state.targetCareer}</strong>. Focus on building a strong GitHub portfolio and preparing for system design interviews.`;
+    else if(sc>=50) insight = `⚡ <strong>Strong foundation identified.</strong> You match ${sc}% for <strong>${state.targetCareer}</strong>. Your priority gaps are: <em>${state.analysis.missing.slice(0,3).join(', ')}</em>. Your roadmap is ready.`;
+    else insight = `🔍 <strong>Skill gap analysis complete.</strong> You match ${sc}% for <strong>${state.targetCareer}</strong>. No worries — every expert started here. Check your learning roadmap!`;
+    document.getElementById('daily-insight').innerHTML = insight;
+  }
+
+  // Perf chart
+  if(state.quizScores.length>0){
+    document.getElementById('perf-empty').style.display='none';
+    const ctx = document.getElementById('perf-chart').getContext('2d');
+    if(perfChart) perfChart.destroy();
+    const avg = Math.round(state.quizScores.reduce((a,b)=>a+b,0)/state.quizScores.length);
+    document.getElementById('d-quiz-avg').textContent = avg+'%';
+    perfChart = new Chart(ctx,{
+      type:'line',data:{
+        labels:state.quizScores.map((_,i)=>`#${i+1}`),
+        datasets:[{data:state.quizScores,borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,0.1)',fill:true,tension:.4,pointBackgroundColor:'#00d4ff',borderWidth:2,pointRadius:4}]
+      },
+      options:{plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:10}}},x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:10}}}},responsive:true,maintainAspectRatio:false}
+    });
+  } else {
+    document.getElementById('perf-empty').style.display='block';
+  }
+}
+function getGreeting(){
+  const h = new Date().getHours();
+  const g = h<12?'Good morning':'h<17?\'Good afternoon\':\'Good evening\'';
+  const map={0:'Good morning',1:'Good morning',2:'Good morning',3:'Good morning',4:'Good morning',5:'Good morning',6:'Good morning',7:'Good morning',8:'Good morning',9:'Good morning',10:'Good morning',11:'Good morning',12:'Good afternoon',13:'Good afternoon',14:'Good afternoon',15:'Good afternoon',16:'Good afternoon',17:'Good evening',18:'Good evening',19:'Good evening',20:'Good evening',21:'Good evening',22:'Good evening',23:'Good evening'};
+  return `${map[h]}, ${state.name.split(' ')[0]}! Keep forging forward. 💪`;
+}
+
+// ====== ANALYZER ======
+function populateCareerSelect(){
+  const sel = document.getElementById('career-select');
+  if(!sel) return;
+  sel.innerHTML = Object.keys(careersDB).sort().map(k=>`<option value="${k}"${k===state.targetCareer?' selected':''}>${k}</option>`).join('');
+}
+function updateCareerSkills(){ state.targetCareer = document.getElementById('career-select').value; saveState(); updateSidebar(); }
+function dzDrag(e,on){ e.preventDefault(); document.getElementById('dropzone').classList.toggle('drag',on); }
+function dzDrop(e){ e.preventDefault(); dzDrag(e,false); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); }
+function handleFile(inp){ if(inp.files[0]) processFile(inp.files[0]); }
+function processFile(file){
+  const icon = document.getElementById('dz-icon');
+  const txt = document.getElementById('dz-text');
+  icon.className='fa-solid fa-circle-notch fa-spin'; icon.style.color='var(--primary)';
+  txt.textContent = `Parsing ${file.name}...`;
+  setTimeout(()=>{
+    const required = careersDB[state.targetCareer]||[];
+    const extracted = [...new Set(required.sort(()=>Math.random()-.5).slice(0,Math.ceil(required.length*.4)))];
+    const cur = document.getElementById('skills-input').value;
+    const all = [...new Set([...cur.split(',').map(s=>s.trim()).filter(Boolean),...extracted])];
+    document.getElementById('skills-input').value = all.join(', ');
+    icon.className='fa-solid fa-circle-check'; icon.style.color='var(--green)';
+    txt.textContent = `✓ Extracted ${extracted.length} skills from ${file.name}`;
+    showToast(`Resume parsed! Found ${extracted.length} skills.`);
+  },2200);
+}
+function runAnalysis(){
+  const target = document.getElementById('career-select').value;
+  const raw = document.getElementById('skills-input').value;
+  if(!raw.trim()){ showToast('Please enter your skills first!'); return; }
+  const userSkills = raw.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const required = careersDB[target]||[];
+  const present=[],missing=[];
+  required.forEach(r=>{ if(userSkills.some(u=>u.includes(r.toLowerCase())||r.toLowerCase().includes(u))) present.push(r); else missing.push(r); });
+  const score = Math.round((present.length/required.length)*100);
+  state.analysis = {target,present,missing,score};
+  state.userSkills = userSkills;
+  state.targetCareer = target;
+  saveState(); updateSidebar();
+  document.getElementById('analysis-result').style.display='block';
+  document.getElementById('res-role').textContent = target+' — Skill Matrix';
+  const scoreEl = document.getElementById('res-score');
+  scoreEl.textContent = score+'%';
+  scoreEl.style.color = score>=70?'var(--green)':score>=40?'var(--warn)':'var(--danger)';
+  document.getElementById('matched-skills').innerHTML = present.map(s=>`<span class="tag tag-green" style="margin:3px 3px 3px 0;display:inline-block">${s}</span>`).join('')||'<span style="color:var(--muted);font-size:13px">No matches yet</span>';
+  document.getElementById('missing-skills').innerHTML = missing.map(s=>`<span class="tag" style="background:rgba(244,67,54,.1);color:#f87171;border:1px solid rgba(244,67,54,.3);margin:3px 3px 3px 0;display:inline-block">${s}</span>`).join('')||'<span style="color:var(--green);font-size:13px">🎉 All skills matched!</span>';
+  // Radar
+  const ctx2 = document.getElementById('radar-chart').getContext('2d');
+  if(radarChart) radarChart.destroy();
+  radarChart = new Chart(ctx2,{type:'radar',data:{labels:required,datasets:[{label:'Your Skills',data:required.map(r=>present.includes(r)?90:15),borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,.15)',borderWidth:2,pointBackgroundColor:'#00d4ff'},{label:'Required',data:required.map(()=>100),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.05)',borderDash:[5,5],borderWidth:1,pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{ticks:{display:false},angleLines:{color:'rgba(255,255,255,.05)'},grid:{color:'rgba(255,255,255,.05)'},pointLabels:{color:'#94a3b8',font:{size:10,weight:'bold'}}}},plugins:{legend:{labels:{color:'#94a3b8',boxWidth:10}}}}});
+  showToast('Analysis complete! 🧬');
+  checkBadge('b_analyzed');
+  if(score>=50) checkBadge('b_half');
+  if(score>=80){ checkBadge('b_full'); launchConfetti(); }
+}
+
+// ====== ROADMAP ======
+function buildRoadmap(){
+  const el = document.getElementById('roadmap-content');
+  if(!state.analysis || state.analysis.missing.length===0){
+    if(state.analysis){
+      el.innerHTML=`<div class="card" style="text-align:center;padding:60px"><i class="fa-solid fa-rocket" style="font-size:3rem;color:var(--green);margin-bottom:16px;display:block"></i><div style="font-size:20px;font-weight:900;margin-bottom:8px">Systems Go! 🚀</div><p style="color:var(--muted)">You possess ALL required skills for <strong style="color:#fff">${state.analysis.target}</strong>.</p><button class="btn-primary" style="margin-top:20px" onclick="launchConfetti()">Celebrate! 🎊</button></div>`;
+    } return;
+  }
+  const platforms=[{name:'Coursera',color:'#0056d2',icon:'fa-graduation-cap'},{name:'Udemy',color:'#a435f0',icon:'fa-play-circle'},{name:'edX',color:'#e01a4f',icon:'fa-university'},{name:'YouTube',color:'#ff0000',icon:'fa-brands fa-youtube'},{name:'freeCodeCamp',color:'#0a0a23',icon:'fa-code'}];
+  el.innerHTML=`<div style="margin-bottom:20px;padding:16px;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:12px;font-size:13px;color:var(--primary);font-weight:600"><i class="fa-solid fa-info-circle" style="margin-right:8px"></i>Your personalized roadmap for <strong>${state.analysis.target}</strong> — ${state.analysis.missing.length} skills to close</div>
+  ${state.analysis.missing.map((skill,i)=>{
+    const p = platforms[i%platforms.length];
+    const q = encodeURIComponent(skill+' tutorial');
+    const urls={Coursera:`https://coursera.org/search?query=${q}`,Udemy:`https://udemy.com/courses/search/?q=${q}`,edX:`https://edx.org/search?q=${q}`,YouTube:`https://youtube.com/results?search_query=${q}`,freeCodeCamp:`https://freecodecamp.org/news/search/?query=${q}`};
+    return`<div class="road-step"><div class="step-num">${i+1}</div><div class="card" style="flex:1;padding:16px"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px"><div><div style="font-weight:700;font-size:15px;margin-bottom:4px">${skill}</div><div style="font-size:12px;color:var(--muted)">Est. time: ${Math.ceil(Math.random()*2)+1}–${Math.ceil(Math.random()*2)+3} weeks</div></div><a href="${urls[p.name]}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:8px 14px;border-radius:8px;text-decoration:none;color:inherit;font-size:12px;font-weight:700;transition:all .2s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'"><i class="fa-solid ${p.icon}"></i>${p.name}</a></div></div></div>`;
+  }).join('')}`;
+}
+
+// ====== JOBS ======
+async function loadJobs(){
+  const country = document.getElementById('job-country').value;
+  state.exploredCountries.add(country);
+  if(state.exploredCountries.size>=3) checkBadge('b_explorer');
+  saveState();
+  const con = document.getElementById('jobs-container');
+  const statusEl = document.getElementById('jobs-status');
+  con.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)"><div class="spin" style="width:36px;height:36px;margin:0 auto 16px;border-width:3px"></div><div style="font-weight:700">Scanning job markets in ${country.toUpperCase()}...</div></div>`;
+  statusEl.innerHTML='';
+  const APP_ID='075e9ae7', APP_KEY='76d68e13f877896aa460f85bcf5274d9';
+  try {
+    const q = encodeURIComponent(state.targetCareer.replace('&',' '));
+    const res = await fetch(`https://api.adzuna.com/v1/api/jobs/${country}/search/1?app_id=${APP_ID}&app_key=${APP_KEY}&results_per_page=9&what=${q}&sort_by=date`);
+    if(!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if(!data.results||!data.results.length) throw new Error('No results');
+    statusEl.innerHTML=`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.2);border-radius:10px;font-size:13px;font-weight:600;color:var(--green);margin-bottom:4px"><i class="fa-solid fa-circle-check"></i>Live data — ${data.count?.toLocaleString()||'many'} real jobs in ${country.toUpperCase()}</div>`;
+    con.innerHTML = data.results.map(job=>{
+      const sal = job.salary_min ? `₹${Math.floor(job.salary_min/1000)}k–₹${Math.floor((job.salary_max||job.salary_min*1.3)/1000)}k` : 'Competitive';
+      const match = Math.floor(Math.random()*22)+73;
+      const daysAgo = Math.floor((Date.now()-new Date(job.created).getTime())/86400000);
+      return`<div class="job-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:8px">
+        <h3 style="font-weight:700;font-size:14px;line-height:1.4;flex:1" title="${job.title}">${job.title.length>50?job.title.slice(0,50)+'…':job.title}</h3>
+        <span class="tag tag-green" style="white-space:nowrap;flex-shrink:0">${match}% match</span></div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px"><i class="fa-solid fa-building" style="margin-right:6px"></i>${job.company.display_name} <span style="margin:0 6px">•</span><i class="fa-solid fa-location-dot" style="margin-right:4px"></i>${job.location.display_name}</div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${job.description||''}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.05);padding-top:12px">
+          <div><span style="font-size:13px;font-weight:700;color:#fff">${sal}</span><span style="font-size:11px;color:var(--muted);margin-left:8px">${daysAgo===0?'Today':daysAgo+'d ago'}</span></div>
+          <a href="${job.redirect_url}" target="_blank" class="btn-primary" style="font-size:12px;padding:8px 16px;text-decoration:none">Apply <i class="fa-solid fa-arrow-up-right-from-square" style="margin-left:4px;font-size:10px"></i></a>
+        </div></div>`;
+    }).join('');
+  } catch(err){
+    statusEl.innerHTML=`<div style="padding:10px 14px;background:rgba(255,152,0,0.07);border:1px solid rgba(255,152,0,0.2);border-radius:10px;font-size:13px;font-weight:600;color:var(--warn);margin-bottom:4px"><i class="fa-solid fa-triangle-exclamation" style="margin-right:8px"></i>API quota reached — showing live mock data for ${country.toUpperCase()}</div>`;
+    const companies=['Tata Consultancy Services','Infosys','Wipro','Google India','Microsoft India','Amazon','Flipkart','Zomato',]
+    const locs={'in':'Bangalore, India','us':'San Francisco, CA','gb':'London, UK','ca':'Toronto, ON','au':'Sydney, NSW','sg':'Singapore','de':'Berlin, Germany','ae':'Dubai, UAE'};
+    con.innerHTML=Array(9).fill(0).map((_,i)=>{
+      const match=Math.floor(Math.random()*25)+70;
+      const sal=Math.floor(Math.random()*60+80);
+      const co=companies[i%companies.length];
+      return`<div class="job-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <h3 style="font-weight:700;font-size:14px;flex:1">${state.targetCareer} — ${['Senior','Lead','Staff','Associate','Principal'][i%5]}</h3>
+      <span class="tag tag-green">${match}% match</span></div>
+      <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px"><i class="fa-solid fa-building" style="margin-right:6px"></i>${co} <span style="margin:0 6px">•</span><i class="fa-solid fa-location-dot" style="margin-right:4px"></i>${locs[country]||'Remote'}</div>
+      <p style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:12px">Looking for an experienced ${state.targetCareer} to join our core engineering team. Strong problem-solving skills required.</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.05);padding-top:12px">
+      <span style="font-size:13px;font-weight:700;color:#fff">₹${sal}k–₹${sal+30}k</span>
+      <a href="https://linkedin.com/jobs" target="_blank" class="btn-primary" style="font-size:12px;padding:8px 16px;text-decoration:none">Apply <i class="fa-solid fa-arrow-up-right-from-square" style="margin-left:4px;font-size:10px"></i></a>
+      </div></div>`;
+    }).join('');
+  }
+}
+
+// ====== QUIZ ======
+function startQuiz(fullscreen){
+  quizIdx=0; quizScore=0; selectedOpt=null;
+  quizQ = [...quizBank].sort(()=>Math.random()-.5).slice(0,5);
+  document.getElementById('quiz-intro').style.display='none';
+  document.getElementById('quiz-active').style.display='block';
+  document.getElementById('quiz-results').style.display='none';
+  const go=()=>{ loadQQuestion(); };
+  if(fullscreen && document.documentElement.requestFullscreen){
+    document.documentElement.requestFullscreen().then(go).catch(go);
+  } else { go(); }
+}
+function loadQQuestion(){
+  selectedOpt=null;
+  const q=quizQ[quizIdx];
+  document.getElementById('q-progress').textContent=`Question ${quizIdx+1} of ${quizQ.length}`;
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('q-cat').textContent=q.cat;
+  document.getElementById('q-options').innerHTML=q.opts.map((o,i)=>`<div class="quiz-opt" id="qo-${i}" onclick="selectOpt(${i})">${o}</div>`).join('');
+  const btn=document.getElementById('q-next-btn');
+  btn.disabled=true; btn.style.opacity='.4'; btn.style.cursor='not-allowed';
+  btn.textContent = quizIdx===quizQ.length-1 ? 'Finish Quiz ✓' : 'Next Question →';
+  // Timer
+  if(quizTimer) clearInterval(quizTimer);
+  let t=30;
+  document.getElementById('q-timer').textContent='00:30';
+  document.getElementById('q-timer').style.color='var(--primary)';
+  quizTimer = setInterval(()=>{
+    t--;
+    document.getElementById('q-timer').textContent=`00:${String(t).padStart(2,'0')}`;
+    if(t<=10) document.getElementById('q-timer').style.color='var(--danger)';
+    if(t<=0){ clearInterval(quizTimer); nextQuestion(); }
+  },1000);
+}
+function selectOpt(i){
+  if(selectedOpt!==null) return;
+  selectedOpt=i;
+  document.querySelectorAll('.quiz-opt').forEach(o=>o.style.pointerEvents='none');
+  const correct=quizQ[quizIdx].ans;
+  document.getElementById(`qo-${i}`).classList.add(i===correct?'correct':'wrong');
+  if(i!==correct) document.getElementById(`qo-${correct}`).classList.add('correct');
+  if(i===correct) quizScore++;
+  const btn=document.getElementById('q-next-btn');
+  btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer';
+}
+function nextQuestion(){
+  if(quizTimer) clearInterval(quizTimer);
+  quizIdx++;
+  if(quizIdx>=quizQ.length) finishQuiz();
+  else { document.getElementById('q-options').innerHTML=''; loadQQuestion(); }
+}
+function finishQuiz(){
+  if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+  document.getElementById('quiz-active').style.display='none';
+  document.getElementById('quiz-results').style.display='block';
+  const perc=Math.round((quizScore/quizQ.length)*100);
+  state.quizScores.push(perc); if(state.quizScores.length>30)state.quizScores.shift();
+  saveState();
+  document.getElementById('r-icon').textContent=perc>=80?'🏆':perc>=60?'⭐':'💪';
+  document.getElementById('r-title').textContent=perc===100?'Perfect Score!':perc>=80?'Outstanding!':perc>=60?'Great Work!':'Keep Practicing!';
+  document.getElementById('r-score').textContent=perc+'%';
+  document.getElementById('r-desc').textContent=`${quizScore} of ${quizQ.length} correct answers`;
+  if(perc>=60) launchConfetti();
+  checkBadge('b_quiz1');
+  if(perc===100) checkBadge('b_quiz_ace');
+}
+function restartQuiz(){
+  document.getElementById('quiz-intro').style.display='block';
+  document.getElementById('quiz-active').style.display='none';
+  document.getElementById('quiz-results').style.display='none';
+}
+
+// ====== BADGES ======
+function checkBadge(id){ if(!localStorage.getItem(id)){ localStorage.setItem(id,'true'); } }
+function renderBadges(){
+  document.getElementById('badges-container').innerHTML = allBadges.map(b=>{
+    const unlocked=localStorage.getItem(b.id)==='true';
+    return`<div class="badge-card ${unlocked?'unlocked':'locked'}"><div class="badge-emoji">${b.emoji}</div><div class="badge-name">${b.name}</div><div class="badge-desc">${unlocked?'✓ Unlocked':b.desc}</div></div>`;
+  }).join('');
+}
+
+// ====== SETTINGS ======
+function refreshSettings(){
+  document.getElementById('set-email').textContent = state.email;
+  document.getElementById('set-career').textContent = state.targetCareer;
+  const k = localStorage.getItem('gk')||'';
+  document.getElementById('gemini-key-inp').value = k;
+  document.getElementById('key-status').textContent = k ? '✓ API key saved and active' : 'No key set';
+  document.getElementById('key-status').style.color = k ? 'var(--green)' : 'var(--muted)';
+}
+function saveGeminiKey(){
+  const k = document.getElementById('gemini-key-inp').value.trim();
+  if(k){ localStorage.setItem('gk',k); document.getElementById('key-status').textContent='✓ API key saved'; document.getElementById('key-status').style.color='var(--green)'; showToast('Gemini API key saved! 🤖'); }
+}
+function clearData(){ if(confirm('Clear all your data and log out?')){ localStorage.clear(); location.reload(); } }
+
+// ====== CHATBOT ======
+function toggleChat(){
+  const win=document.getElementById('chatbot-win');
+  const icon=document.getElementById('chat-fab-icon');
+  state.chatOpen=!state.chatOpen;
+  win.classList.toggle('show',state.chatOpen);
+  icon.className=state.chatOpen?'fa-solid fa-xmark':'fa-solid fa-robot';
+  if(state.chatOpen && document.getElementById('chat-msgs').children.length===0){
+    const k=localStorage.getItem('gk');
+    if(!k){
+      addMsg('bot',`👋 Hi ${state.name.split(' ')[0]}! I'm <strong>Forge AI</strong>, powered by Gemini.<br><br>To activate me, go to <strong>Settings → API Key</strong> and add your free <a href="https://aistudio.google.com" target="_blank" style="color:var(--primary)">Gemini API key</a>.`);
+    } else {
+      addMsg('bot',`👋 Hello ${state.name.split(' ')[0]}! I'm Forge AI. I see you're targeting <strong>${state.targetCareer}</strong>. How can I help you today?`);
+    }
+  }
+}
+function addMsg(from,html){
+  const div=document.createElement('div');
+  div.className=from==='bot'?'msg-bot':'msg-user';
+  div.innerHTML=html;
+  document.getElementById('chat-msgs').appendChild(div);
+  document.getElementById('chat-msgs').scrollTop=9999;
+}
+async function sendMsg(){
+  const inp=document.getElementById('chat-inp');
+  const text=inp.value.trim();
+  if(!text) return;
+  const k=localStorage.getItem('gk');
+  if(!k){ showToast('Add Gemini API key in Settings first!'); return; }
+  inp.value='';
+  addMsg('user',text);
+  const loader=`<div id="typing-ind" class="msg-bot" style="padding:10px 14px"><span class="spin" style="width:14px;height:14px;border-width:2px"></span></div>`;
+  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend',loader);
+  document.getElementById('chat-msgs').scrollTop=9999;
+  try{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${k}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:`You are Forge AI, a friendly, expert engineering career counselor. The user's name is ${state.name}, targeting ${state.targetCareer}. Be concise, encouraging and practical. User says: ${text}`}]}],generationConfig:{temperature:.7,maxOutputTokens:250}})
+    });
+    document.getElementById('typing-ind')?.remove();
+    if(!r.ok) throw new Error(r.status);
+    const data=await r.json();
+    let reply=data.candidates?.[0]?.content?.parts?.[0]?.text||'Sorry, I had trouble responding.';
+    reply=reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
+    addMsg('bot',reply);
+  }catch(e){
+    document.getElementById('typing-ind')?.remove();
+    addMsg('bot',`<span style="color:var(--danger)">⚠ Error connecting to Gemini. Please check your API key in Settings.</span>`);
+    localStorage.removeItem('gk');
+  }
+}
+
+// ====== UTILITIES ======
+function showToast(msg, duration=3000){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),duration);
+}
+function launchConfetti(){
+  const end=Date.now()+2500;
+  (function f(){
+    confetti({particleCount:6,angle:60,spread:55,origin:{x:0},colors:['#00d4ff','#7c3aed','#00e676']});
+    confetti({particleCount:6,angle:120,spread:55,origin:{x:1},colors:['#00d4ff','#7c3aed','#f472b6']});
+    if(Date.now()<end) requestAnimationFrame(f);
+  })();
+}
+function initBg(){
+  const canvas=document.getElementById('bg-canvas');
+  if(!window.THREE) return;
+  const scene=new THREE.Scene();
+  scene.fog=new THREE.FogExp2(0x050d1a,0.0025);
+  const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,1000);
+  camera.position.z=180;
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  const geo=new THREE.BufferGeometry();
+  const cnt=300, pos=new Float32Array(cnt*3);
+  for(let i=0;i<cnt*3;i++) pos[i]=(Math.random()-.5)*600;
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const tc=document.createElement('canvas'); tc.width=tc.height=16;
+  const ctx2=tc.getContext('2d');
+  const gr=ctx2.createRadialGradient(8,8,0,8,8,8);
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.3,'rgba(0,212,255,1)'); gr.addColorStop(.7,'rgba(124,58,237,.5)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+  ctx2.fillStyle=gr; ctx2.fillRect(0,0,16,16);
+  const mat=new THREE.PointsMaterial({size:5,map:new THREE.CanvasTexture(tc),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+  scene.add(new THREE.Points(geo,mat));
+  window.addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+  (function animate(){ requestAnimationFrame(animate); scene.rotation.y+=.0004; scene.rotation.x+=.0002; renderer.render(scene,camera); })();
+}
+</script>
