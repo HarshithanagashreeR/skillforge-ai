@@ -123,18 +123,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overf
 .quiz-opt.selected{border-color:var(--primary);background:rgba(0,212,255,0.1);color:var(--primary)}
 .quiz-opt.correct{border-color:var(--green);background:rgba(0,230,118,0.1);color:var(--green)}
 .quiz-opt.wrong{border-color:var(--danger);background:rgba(244,67,54,0.1);color:var(--danger)}
-/* ===== CHATBOT ===== */
-#chatbot-fab{position:fixed;bottom:28px;right:28px;z-index:9000;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));border:none;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 8px 30px rgba(0,212,255,0.3);transition:all .3s}
-#chatbot-fab:hover{transform:scale(1.1)}
-#chatbot-fab.show{display:flex}
-#chatbot-win{position:fixed;bottom:100px;right:28px;z-index:9000;width:360px;background:rgba(5,13,26,0.95);backdrop-filter:blur(24px);border:1px solid rgba(0,212,255,0.15);border-radius:20px;overflow:hidden;display:none;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
-#chatbot-win.show{display:flex}
-.chat-head{background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.15));padding:16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px}
-.chat-msgs{height:320px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
-.chat-inp-row{padding:12px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px}
-.msg-bot,.msg-user{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.5}
-.msg-bot{background:rgba(255,255,255,0.06);align-self:flex-start;border-radius:4px 14px 14px 14px}
-.msg-user{background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(124,58,237,0.2));align-self:flex-end;border-radius:14px 4px 14px 14px;color:#fff}
+
 /* ===== TOAST ===== */
 #toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(80px);z-index:9999;background:rgba(13,27,46,0.95);border:1px solid rgba(0,212,255,0.3);backdrop-filter:blur(16px);color:#fff;padding:12px 24px;border-radius:12px;font-size:13px;font-weight:600;transition:transform .4s ease;pointer-events:none}
 #toast.show{transform:translateX(-50%) translateY(0)}
@@ -197,8 +186,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overf
   #quiz-active{max-width:100%}
   #quiz-results{max-width:100%}
   .badge-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
-  #chatbot-win{width:calc(100vw - 16px);right:8px;left:8px;bottom:80px}
-  #chatbot-fab{bottom:80px;right:16px;z-index:9000}
+
   .view-header{flex-direction:column;align-items:flex-start;gap:12px}
   .view-header > div:last-child{width:100%;display:flex;flex-wrap:wrap;gap:8px}
   #job-country{flex:1}
@@ -219,7 +207,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overf
 <div id="mobile-top-bar">
   <button id="mob-menu-btn" onclick="toggleDrawer()"><i class="fa-solid fa-bars"></i></button>
   <div id="mob-logo">Skill<span>Forge</span> AI</div>
-  <button onclick="toggleChat()" style="margin-left:auto;background:none;border:none;color:var(--primary);font-size:20px;cursor:pointer"><i class="fa-solid fa-robot"></i></button>
+
 </div>
 <div id="mobile-overlay" onclick="toggleDrawer()"></div>
 <div id="sidebar-drawer">
@@ -615,27 +603,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overf
   </div><!-- /main-content -->
 </div><!-- /page-app -->
 
-<!-- CHATBOT FAB -->
-<button id="chatbot-fab" onclick="toggleChat()" title="AI Career Assistant">
-  <i class="fa-solid fa-robot" id="chat-fab-icon"></i>
-</button>
 
-<!-- CHATBOT WINDOW -->
-<div id="chatbot-win">
-  <div class="chat-head">
-    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-robot" style="color:#fff"></i></div>
-    <div>
-      <div style="font-weight:700;font-size:14px">Forge AI</div>
-      <div style="font-size:11px;color:var(--primary)">Gemini 2.5 Flash • Online</div>
-    </div>
-    <button onclick="toggleChat()" style="margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px"><i class="fa-solid fa-xmark"></i></button>
-  </div>
-  <div class="chat-msgs" id="chat-msgs"></div>
-  <div class="chat-inp-row">
-    <input id="chat-inp" class="inp" placeholder="Ask about careers, skills..." style="flex:1" onkeydown="if(event.key==='Enter')sendMsg()">
-    <button onclick="sendMsg()" class="btn-primary" style="padding:10px 14px"><i class="fa-solid fa-paper-plane"></i></button>
-  </div>
-</div>
 
 <!-- TOAST -->
 <div id="toast"><i class="fa-solid fa-circle-check" style="margin-right:8px;color:var(--green)"></i><span id="toast-msg">Done!</span></div>
@@ -1068,53 +1036,6 @@ function refreshSettings(){
 }
 function clearData(){ if(confirm('Clear all your data and log out?')){ localStorage.clear(); location.reload(); } }
 
-// ====== CHATBOT ======
-function toggleChat(){
-  const win=document.getElementById('chatbot-win');
-  const icon=document.getElementById('chat-fab-icon');
-  state.chatOpen=!state.chatOpen;
-  win.classList.toggle('show',state.chatOpen);
-  icon.className=state.chatOpen?'fa-solid fa-xmark':'fa-solid fa-robot';
-  if(state.chatOpen && document.getElementById('chat-msgs').children.length===0){
-    addMsg('bot',`👋 Hello ${state.name.split(' ')[0]}! I'm Forge AI. I see you're targeting <strong>${state.targetCareer}</strong>. How can I help you today?`);
-  }
-}
-function addMsg(from,html){
-  const div=document.createElement('div');
-  div.className=from==='bot'?'msg-bot':'msg-user';
-  div.innerHTML=html;
-  document.getElementById('chat-msgs').appendChild(div);
-  document.getElementById('chat-msgs').scrollTop=9999;
-}
-async function sendMsg(){
-  const inp=document.getElementById('chat-inp');
-  const text=inp.value.trim();
-  if(!text) return;
-  inp.value='';
-  addMsg('user',text);
-  const loader=`<div id="typing-ind" class="msg-bot" style="padding:10px 14px"><span class="spin" style="width:14px;height:14px;border-width:2px"></span></div>`;
-  document.getElementById('chat-msgs').insertAdjacentHTML('beforeend',loader);
-  document.getElementById('chat-msgs').scrollTop=9999;
-  try{
-    const prompt=`You are Forge AI, a friendly expert engineering career advisor inside SkillForge AI. The user's name is ${state.name} and they are targeting ${state.targetCareer}. Be concise (2-3 sentences max), encouraging and practical. User says: ${text}`;
-    const r=await fetch(`/api/chat`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:200}})
-    });
-    document.getElementById('typing-ind')?.remove();
-    if(r.status===429){addMsg('bot','⏳ Too many requests! Please wait 30 seconds and try again.');return;}
-    if(!r.ok) throw new Error('API error '+r.status);
-    const data=await r.json();
-    let reply=data.candidates?.[0]?.content?.parts?.[0]?.text||'Sorry, I had trouble responding. Please try again!';
-    reply=reply.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/\n/g,'<br>');
-    addMsg('bot',reply);
-  }catch(e){
-    document.getElementById('typing-ind')?.remove();
-    addMsg('bot',`<span style="color:var(--warn)">⚠️ Could not connect to Forge AI. Check your internet connection and try again.</span>`);
-    console.error('Chat error:',e);
-  }
-}
 
 
 // ====== UTILITIES ======
