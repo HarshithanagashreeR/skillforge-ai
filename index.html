@@ -599,15 +599,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overf
         </div>
       </div>
       <div style="max-width:600px">
-        <div class="card" style="margin-bottom:16px">
-          <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--primary)"><i class="fa-solid fa-key" style="margin-right:8px"></i>Gemini AI API Key</div>
-          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Get a free key from <a href="https://aistudio.google.com" target="_blank" style="color:var(--primary)">Google AI Studio</a> to power the AI chatbot.</p>
-          <div style="display:flex;gap:10px">
-            <input type="password" id="gemini-key-inp" placeholder="AIzaSy..." class="inp" value="">
-            <button class="btn-primary" onclick="saveGeminiKey()" style="white-space:nowrap">Save Key</button>
-          </div>
-          <div id="key-status" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
-        </div>
+
         <div class="card" style="margin-bottom:16px">
           <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--primary)"><i class="fa-solid fa-user" style="margin-right:8px"></i>Account Info</div>
           <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Email: <span style="color:#fff" id="set-email">—</span></div>
@@ -1073,14 +1065,6 @@ function renderBadges(){
 function refreshSettings(){
   document.getElementById('set-email').textContent = state.email;
   document.getElementById('set-career').textContent = state.targetCareer;
-  const k = localStorage.getItem('gk')||'';
-  document.getElementById('gemini-key-inp').value = k;
-  document.getElementById('key-status').textContent = k ? '✓ API key saved and active' : 'No key set';
-  document.getElementById('key-status').style.color = k ? 'var(--green)' : 'var(--muted)';
-}
-function saveGeminiKey(){
-  const k = document.getElementById('gemini-key-inp').value.trim();
-  if(k){ localStorage.setItem('gk',k); document.getElementById('key-status').textContent='✓ API key saved'; document.getElementById('key-status').style.color='var(--green)'; showToast('Gemini API key saved! 🤖'); }
 }
 function clearData(){ if(confirm('Clear all your data and log out?')){ localStorage.clear(); location.reload(); } }
 
@@ -1092,12 +1076,7 @@ function toggleChat(){
   win.classList.toggle('show',state.chatOpen);
   icon.className=state.chatOpen?'fa-solid fa-xmark':'fa-solid fa-robot';
   if(state.chatOpen && document.getElementById('chat-msgs').children.length===0){
-    const k=localStorage.getItem('gk');
-    if(!k){
-      addMsg('bot',`👋 Hello ${state.name.split(' ')[0]}! I'm <strong>Forge AI</strong>, powered by Gemini 🤖<br><br>I see you're targeting <strong>${state.targetCareer}</strong>. Ask me anything about skills, jobs, or career growth!`);
-    } else {
-      addMsg('bot',`👋 Hello ${state.name.split(' ')[0]}! I'm Forge AI. I see you're targeting <strong>${state.targetCareer}</strong>. How can I help you today?`);
-    }
+    addMsg('bot',`👋 Hello ${state.name.split(' ')[0]}! I'm Forge AI. I see you're targeting <strong>${state.targetCareer}</strong>. How can I help you today?`);
   }
 }
 function addMsg(from,html){
@@ -1117,9 +1096,8 @@ async function sendMsg(){
   document.getElementById('chat-msgs').insertAdjacentHTML('beforeend',loader);
   document.getElementById('chat-msgs').scrollTop=9999;
   try{
-    const GEMINI_KEY='AIzaSyAg5wjInxn0seGHHpN6Hhb-dxQGdheazc0';
     const prompt=`You are Forge AI, a friendly expert engineering career advisor inside SkillForge AI. The user's name is ${state.name} and they are targeting ${state.targetCareer}. Be concise (2-3 sentences max), encouraging and practical. User says: ${text}`;
-    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,{
+    const r=await fetch(`/api/chat`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:200}})
